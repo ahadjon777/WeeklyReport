@@ -1,0 +1,57 @@
+{% load static %}<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Hisobot{% endblock %} · WeeklyReport</title>
+  <link rel="stylesheet" href="{% static 'reports/style.css' %}">
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="{% url 'my_entries' %}">WeeklyReport</a>
+    {% if user.is_authenticated %}
+    <nav>
+      <a href="{% url 'my_entries' %}" class="{% if request.resolver_match.url_name == 'my_entries' %}on{% endif %}">Kunlik hisobot</a>
+      <a href="{% url 'summary' %}" class="{% if request.resolver_match.url_name == 'summary' %}on{% endif %}">Yig'ma hisobotlar</a>
+      {% if user.is_staff %}<a href="/admin/">Boshqaruv</a>{% endif %}
+    </nav>
+    <div class="who">
+      <span>{{ user.get_full_name|default:user.username }}</span>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link" type="submit">Chiqish</button></form>
+    </div>
+    {% endif %}
+  </div>
+</header>
+
+<main class="wrap">
+  {% if messages %}
+    {% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+{% if user.is_authenticated and not user.is_superuser %}
+<div id="reminder" class="modal-bg" hidden>
+  <div class="modal" role="alertdialog" aria-live="assertive">
+    <div class="modal-time" id="reminder-time"></div>
+    <h2>Eslatma</h2>
+    <p id="reminder-msg"></p>
+    <p class="muted" id="reminder-stat"></p>
+    <div class="modal-actions">
+      <a class="btn" id="reminder-go" href="{% url 'my_entries' %}">Hisobotga o'tish</a>
+      <button class="btn ghost" id="reminder-close" type="button">Keyinroq</button>
+    </div>
+  </div>
+</div>
+<script>
+  window.REMINDER_URLS = {
+    check: "{% url 'reminder_check' %}",
+    ack: "{% url 'reminder_ack' %}",
+    csrf: "{{ csrf_token }}"
+  };
+</script>
+<script src="{% static 'reports/reminders.js' %}"></script>
+{% endif %}
+</body>
+</html>

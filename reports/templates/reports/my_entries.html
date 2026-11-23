@@ -1,0 +1,78 @@
+{% extends "reports/base.html" %}
+{% load report_tags %}
+{% block title %}Kunlik hisobot{% endblock %}
+{% block content %}
+<div class="daynav">
+  <a class="btn ghost" href="?date={{ prev_day|date:'Y-m-d' }}">← Oldingi kun</a>
+  <h1>{{ day|uzdate }}{% if is_today %} <span class="pill">bugun</span>{% endif %}</h1>
+  {% if next_day %}<a class="btn ghost" href="?date={{ next_day|date:'Y-m-d' }}">Keyingi kun →</a>{% else %}<span></span>{% endif %}
+</div>
+
+<div class="weekbar">
+  {% for d in week_days %}
+    <a class="daychip {% if d.current %}cur{% endif %} {% if d.future %}future{% endif %} {% if d.n %}has{% endif %}"
+       {% if not d.future %}href="?date={{ d.date|date:'Y-m-d' }}"{% endif %}>
+      <span>{{ d.date|uzshort }}</span>
+      <b>{% if d.n %}{{ d.h|hrs }} s{% else %}—{% endif %}</b>
+    </a>
+  {% endfor %}
+  <div class="weektotal">Hafta ({{ week_label }}): <b>{{ week_total|hrs }}</b> soat</div>
+</div>
+
+<div class="grid2">
+  <section class="card">
+    <h2>Bajarilgan ishlar <span class="muted">· {{ day_hours|hrs }} soat</span></h2>
+    {% if entries %}
+      <ul class="entries">
+      {% for e in entries %}
+        <li>
+          <div class="e-main">
+            <div class="e-text">{{ e.description|linebreaksbr }}</div>
+            <div class="e-meta">
+              <span class="tag {{ e.status }}">{{ e.get_status_display }}</span>
+              <span>{{ e.hours|hrs }} soat</span>
+            </div>
+          </div>
+          {% if can_edit %}
+          <div class="e-actions">
+            <a href="{% url 'entry_edit' e.pk %}">Tahrirlash</a>
+            <form method="post" action="{% url 'entry_delete' e.pk %}" onsubmit="return confirm('Yozuv o\'chirilsinmi?');">
+              {% csrf_token %}<button class="link danger" type="submit">O'chirish</button>
+            </form>
+          </div>
+          {% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">Bu kun uchun yozuv yo'q.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Yangi yozuv</h2>
+    {% if can_add %}
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <label>Bajarilgan ish
+        {{ form.description }}
+        {% for er in form.description.errors %}<span class="err">{{ er }}</span>{% endfor %}
+      </label>
+      <div class="row">
+        <label>Sarflangan soat
+          {{ form.hours }}
+          {% for er in form.hours.errors %}<span class="err">{{ er }}</span>{% endfor %}
+        </label>
+        <label>Holati
+          {{ form.status }}
+        </label>
+      </div>
+      <button class="btn" type="submit">Saqlash</button>
+    </form>
+    {% else %}
+      <p class="muted">Bu sana uchun yozuv kiritish muddati o'tgan. Zarur bo'lsa, rahbarga murojaat qiling.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

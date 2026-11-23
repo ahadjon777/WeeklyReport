@@ -1,0 +1,99 @@
+{% extends "reports/base.html" %}
+{% load report_tags %}
+{% block title %}Yig'ma hisobot{% endblock %}
+{% block content %}
+<h1>Yig'ma hisobotlar</h1>
+
+<div class="tabs">
+  {% for key, name in periods %}
+    <a class="{% if key == period %}on{% endif %}" href="?period={{ key }}&date={{ ref|date:'Y-m-d' }}{% if sel_department %}&department={{ sel_department }}{% endif %}{% if sel_user %}&user={{ sel_user }}{% endif %}">{{ name }}</a>
+  {% endfor %}
+</div>
+
+<div class="daynav">
+  <a class="btn ghost" href="{{ prev_url }}">← Oldingi</a>
+  <h2>{{ period_name }}: {{ label }}</h2>
+  {% if next_url %}<a class="btn ghost" href="{{ next_url }}">Keyingi →</a>{% else %}<span></span>{% endif %}
+</div>
+
+{% if user.is_staff %}
+<form class="filters" method="get">
+  <input type="hidden" name="period" value="{{ period }}">
+  <input type="hidden" name="date" value="{{ ref|date:'Y-m-d' }}">
+  <label>Bo'lim
+    <select name="department">
+      <option value="">Barchasi</option>
+      {% for d in departments %}<option value="{{ d.pk }}" {% if sel_department == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Xodim
+    <select name="user">
+      <option value="">Barchasi</option>
+      {% for pk, name in all_users %}<option value="{{ pk }}" {% if sel_user == pk|stringformat:"s" %}selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </label>
+  <button class="btn ghost" type="submit">Saralash</button>
+</form>
+{% endif %}
+
+<div class="stats">
+  <div class="stat"><span>Xodimlar</span><b>{{ totals.employees }}</b></div>
+  <div class="stat"><span>Yozuvlar</span><b>{{ totals.entries }}</b></div>
+  <div class="stat"><span>Jami soat</span><b>{{ totals.hours|hrs }}</b></div>
+  <div class="stat {% if totals.missing_days %}warn{% endif %}"><span>Kiritilmagan ish kunlari</span><b>{{ totals.missing_days }}</b></div>
+  <a class="btn" href="{% url 'export_excel' %}?{{ export_qs }}">Excel'ga yuklab olish</a>
+</div>
+
+{% if rows %}
+<div class="card flush">
+<table class="tbl">
+  <thead>
+    <tr>
+      <th>Xodim</th><th>Bo'lim</th>
+      <th class="num">Yozuv</th><th class="num">Soat</th>
+      <th class="num">Hisobot kunlari</th><th class="num">Kiritilmagan</th>
+      <th class="num">Bajarildi</th><th class="num">Jarayonda</th><th class="num">To'siq</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><b>{{ r.name }}</b>{% if r.position %}<div class="muted small">{{ r.position }}</div>{% endif %}</td>
+      <td>{{ r.department|default:"—" }}</td>
+      <td class="num">{{ r.count }}</td>
+      <td class="num">{{ r.hours|hrs }}</td>
+      <td class="num">{{ r.days_reported }}</td>
+      <td class="num {% if r.missing_days %}bad{% endif %}">{{ r.missing_days }}</td>
+      <td class="num">{{ r.done }}</td>
+      <td class="num">{{ r.progress }}</td>
+      <td class="num {% if r.blocked %}bad{% endif %}">{{ r.blocked }}</td>
+    </tr>
+    {% if r.days %}
+    <tr class="detail">
+      <td colspan="9">
+        <details>
+          <summary>Bajarilgan ishlar ({{ r.count }})</summary>
+          {% for day, entries in r.days %}
+            <div class="dayblock">
+              <div class="dayhead">{{ day|uzdate }}</div>
+              <ul>
+              {% for e in entries %}
+                <li>{{ e.description }} <span class="muted">— {{ e.hours|hrs }} s</span>
+                  {% if e.status != 'done' %}<span class="tag {{ e.status }}">{{ e.get_status_display }}</span>{% endif %}
+                </li>
+              {% endfor %}
+              </ul>
+            </div>
+          {% endfor %}
+        </details>
+      </td>
+    </tr>
+    {% endif %}
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+  <p class="muted">Tanlangan davr uchun ma'lumot topilmadi.</p>
+{% endif %}
+{% endblock %}

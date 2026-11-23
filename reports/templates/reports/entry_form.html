@@ -1,0 +1,28 @@
+{% extends "reports/base.html" %}
+{% load report_tags %}
+{% block title %}Yozuvni tahrirlash{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Yozuvni tahrirlash</h1>
+  <p class="muted">{{ entry.date|uzdate }}{% if entry.user_id != user.id %} · {{ entry.user.get_full_name|default:entry.user.username }}{% endif %}</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <label>Bajarilgan ish
+      {{ form.description }}
+      {% for er in form.description.errors %}<span class="err">{{ er }}</span>{% endfor %}
+    </label>
+    <div class="row">
+      <label>Sarflangan soat
+        {{ form.hours }}
+        {% for er in form.hours.errors %}<span class="err">{{ er }}</span>{% endfor %}
+      </label>
+      <label>Holati {{ form.status }}</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" type="submit">Saqlash</button>
+      <a class="btn ghost" href="/?date={{ entry.date|date:'Y-m-d' }}">Bekor qilish</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
