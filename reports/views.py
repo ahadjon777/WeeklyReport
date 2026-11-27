@@ -5,6 +5,8 @@ from urllib.parse import urlencode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
+from django.urls import reverse
 from django.db.models import Count, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,10 +14,20 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .exports import build_workbook
+from .exports_word import build_docx
 from .forms import WorkEntryForm
 from .models import Department, ReminderAck, ReminderSlot, WorkEntry
 from .periods import PERIOD_KEYS, PERIODS, get_range, period_title
 from .services import build_summary, display_name, employees_for
+
+
+class StaffAwareLoginView(LoginView):
+    """Rahbar kirganda boshqaruv paneliga, xodim kirganda kunlik hisobotga."""
+
+    redirect_authenticated_user = True
+
+    def get_default_redirect_url(self):
+        return reverse("panel") if self.request.user.is_staff else reverse("my_entries")
 
 
 def _parse_date(value, default):
@@ -57,7 +69,7 @@ def my_entries(request):
         form = WorkEntryForm()
 
     entries = WorkEntry.objects.filter(user=request.user, date=day).order_by("created_at")
-    day_hours = sum((e.hours for e in entries), Decimal("0"))
+    day_hours = sum(((e.hours or Decimal("0")) for e in entries), Decimal("0"))
 
     week_start, week_end, week_label = get_range("week", day)
     week_rows = (
@@ -75,7 +87,7 @@ def my_entries(request):
             {
                 "date": d,
                 "n": r["n"] if r else 0,
-                "h": r["h"] if r else Decimal("0"),
+                "h": (r["h"] or Decimal("0")) if r else Decimal("0"),
                 "future": d > today,
                 "current": d == day,
             }
@@ -97,6 +109,7 @@ def my_entries(request):
             "week_label": week_label,
             "week_days": week_days,
             "week_total": sum((d["h"] for d in week_days), Decimal("0")),
+            "week_count": sum(d["n"] for d in week_days),
         },
     )
 
@@ -216,6 +229,29 @@ def export_excel(request):
     resp["Content-Disposition"] = (
         f'attachment; filename="hisobot_{period}_{start.isoformat()}.xlsx"'
     )
+    return resp
+
+
+@login_required
+def export_word(request):
+    period, ref, start, end, label, department, user_id = _summary_params(request)
+    users_qs = employees_for(
+        request.user,
+        department_id=int(department) if department.isdigit() else None,
+        user_id=int(user_id) if user_id.isdigit() else None,
+    )
+    rows, totals = build_summary(users_qs, start, end)
+    detail = request.GET.get("detail")
+    detailed = (detail == "1") if detail in ("0", "1") else period in ("week", "month")
+    dep_name = ""
+    if department.isdigit():
+        dep_name = Department.objects.filter(pk=int(department)).values_list("name", flat=True).first() or ""
+    content = build_docx(rows, totals, period, period_title(period), label, start, end, dep_name, detailed)
+    resp = HttpResponse(
+        content,
+        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
+    resp["Content-Disposition"] = f'attachment; filename="hisobot_{period}_{start.isoformat()}.docx"'
     return resp
 
 

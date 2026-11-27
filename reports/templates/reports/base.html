@@ -14,7 +14,7 @@
     <nav>
       <a href="{% url 'my_entries' %}" class="{% if request.resolver_match.url_name == 'my_entries' %}on{% endif %}">Kunlik hisobot</a>
       <a href="{% url 'summary' %}" class="{% if request.resolver_match.url_name == 'summary' %}on{% endif %}">Yig'ma hisobotlar</a>
-      {% if user.is_staff %}<a href="/admin/">Boshqaruv</a>{% endif %}
+      {% if user.is_staff %}<a href="{% url 'panel' %}">Boshqaruv paneli</a>{% endif %}
     </nav>
     <div class="who">
       <span>{{ user.get_full_name|default:user.username }}</span>

@@ -62,7 +62,7 @@ def build_summary(users_qs, start, end):
     total_missing = 0
     for u in users:
         es = by_user.get(u.id, [])
-        hours = sum((e.hours for e in es), Decimal("0"))
+        hours = sum(((e.hours or Decimal("0")) for e in es), Decimal("0"))
         reported = {e.date for e in es}
         statuses = Counter(e.status for e in es)
         days = defaultdict(list)

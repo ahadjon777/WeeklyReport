@@ -13,11 +13,13 @@ class WorkEntryForm(forms.ModelForm):
             "description": forms.Textarea(
                 attrs={"rows": 3, "placeholder": "Nima ish qildingiz?"}
             ),
-            "hours": forms.NumberInput(attrs={"step": "0.5", "min": "0.5", "max": "16"}),
+            "hours": forms.NumberInput(attrs={"step": "0.5", "min": "0.5", "max": "16", "placeholder": "ixtiyoriy"}),
         }
 
     def clean_hours(self):
         h = self.cleaned_data["hours"]
+        if h is None:
+            return None
         if h <= Decimal("0") or h > Decimal("16"):
             raise forms.ValidationError("Soat 0 dan katta va 16 dan oshmasligi kerak.")
         return h

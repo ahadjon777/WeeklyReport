@@ -84,3 +84,6 @@ LOGOUT_REDIRECT_URL = "login"
 WORK_DAYS = [0, 1, 2, 3, 4]
 # Xodim necha kun orqaga qarab hisobot kirita/tahrirlay oladi
 BACKFILL_DAYS = 3
+
+# Word hisobot sarlavhasida chiqadigan tashkilot nomi (bo'sh qoldirsangiz chiqmaydi)
+ORG_NAME = "Tashkilot nomi"

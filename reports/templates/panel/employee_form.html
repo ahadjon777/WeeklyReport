@@ -1,0 +1,50 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if target %}Xodimni tahrirlash{% else %}Yangi xodim{% endif %}{% endblock %}
+{% block heading %}{% if target %}Xodimni tahrirlash{% else %}Yangi xodim{% endif %}{% endblock %}
+{% block actions %}<a class="btn" href="{% url 'panel_employees' %}">← Ro'yxatga</a>{% endblock %}
+
+{% block content %}
+<form method="post" class="card form" autocomplete="off">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="grid2">
+    <label>Familiya {{ form.last_name }}{% for e in form.last_name.errors %}<span class="err">{{ e }}</span>{% endfor %}</label>
+    <label>Ism {{ form.first_name }}{% for e in form.first_name.errors %}<span class="err">{{ e }}</span>{% endfor %}</label>
+    <label>Bo'lim {{ form.department }}</label>
+    <label>Lavozim {{ form.position }}</label>
+    <label>Login {{ form.username }}{% for e in form.username.errors %}<span class="err">{{ e }}</span>{% endfor %}</label>
+    <label>Parol
+      <span class="inline">{{ form.password }}<button type="button" class="btn" id="genpw">Avto</button></span>
+      {% for e in form.password.errors %}<span class="err">{{ e }}</span>{% endfor %}
+      <span class="hint">{{ form.password.help_text }}</span>
+    </label>
+  </div>
+
+  <div class="checks">
+    <label class="check">{{ form.is_staff }}<span><b>Rahbar</b><small>{{ form.is_staff.help_text }}</small></span></label>
+    {% if target %}<label class="check">{{ form.is_active }}<span><b>Faol</b><small>O'chirilsa tizimga kira olmaydi, hisobotlari saqlanadi.</small></span></label>{% endif %}
+  </div>
+
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Saqlash</button>
+    <a class="btn" href="{% url 'panel_employees' %}">Bekor qilish</a>
+  </div>
+</form>
+
+{% if target %}
+<form method="post" action="{% url 'panel_employee_password' target.pk %}" class="card danger-zone" onsubmit="return confirm('Yangi parol yaratilsinmi? Eskisi ishlamay qoladi.');">
+  {% csrf_token %}
+  <div><b>Parolni tiklash</b><p class="muted">Yangi tasodifiy parol yaratiladi va ekranda bir marta ko'rsatiladi. Xodimga o'zingiz yetkazasiz.</p></div>
+  <button class="btn" type="submit"><svg class="ic"><use href="#i-key"/></svg>Yangi parol yaratish</button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("genpw").addEventListener("click", function () {
+    var n = new Uint32Array(1); crypto.getRandomValues(n);
+    document.getElementById("{{ form.password.id_for_label }}").value = String(100000 + (n[0] % 900000));
+  });
+</script>
+{% endblock %}

@@ -52,7 +52,7 @@
     timeEl.textContent = data.time;
     msgEl.textContent = data.message;
     statEl.textContent = data.entries_today > 0
-      ? "Bugun kiritilgan: " + data.entries_today + " ta yozuv, " + data.hours_today + " soat."
+      ? "Bugun kiritilgan: " + data.entries_today + " ta yozuv" + (parseFloat(data.hours_today) > 0 ? ", " + data.hours_today + " soat." : ".")
       : "Bugun hali yozuv kiritilmagan.";
     box.hidden = false;
     beep();

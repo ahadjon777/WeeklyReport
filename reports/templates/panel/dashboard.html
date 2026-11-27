@@ -1,0 +1,129 @@
+{% extends "panel/base.html" %}
+{% load report_tags %}
+{% block title %}Bosh sahifa{% endblock %}
+{% block heading %}Bosh sahifa <span class="sub">{{ today|uzdate }}</span>{% endblock %}
+{% block actions %}
+  <a class="btn" href="{% url 'summary' %}"><svg class="ic"><use href="#i-chart"/></svg>Hisobotlar</a>
+  <a class="btn primary" href="{% url 'panel_employee_new' %}"><svg class="ic"><use href="#i-plus"/></svg>Xodim qo'shish</a>
+{% endblock %}
+
+{% block content %}
+{% if not is_workday %}
+  <div class="notice">Bugun dam olish kuni: eslatmalar yuborilmaydi va hisobot talab qilinmaydi.</div>
+{% endif %}
+
+<section class="tiles">
+  <div class="tile">
+    <div class="tile-h">Bugun hisobot berdi</div>
+    <div class="tile-v">{{ reported_n }}<span> / {{ total_n }}</span></div>
+    <div class="meter"><i style="width:{{ reported_pct }}%"></i></div>
+    <div class="tile-f">{{ reported_pct }}% xodim</div>
+  </div>
+  <div class="tile {% if pending_n %}tile-warn{% else %}tile-ok{% endif %}">
+    <div class="tile-h">Hali topshirmagan</div>
+    <div class="tile-v">{{ pending_n }}</div>
+    <div class="tile-f">{% if not is_workday %}Dam olish kuni{% elif pending_n %}Eslatish kerak{% else %}Hammasi topshirgan{% endif %}</div>
+  </div>
+  <div class="tile">
+    <div class="tile-h">Bugungi yozuvlar</div>
+    <div class="tile-v">{{ today_entries }}<span> ta</span></div>
+    <div class="tile-f">Barcha xodimlar bo'yicha</div>
+  </div>
+  <div class="tile">
+    <div class="tile-h">Shu hafta</div>
+    <div class="tile-v">{{ week_n }}<span> ta yozuv</span></div>
+    <div class="tile-f">
+      {% if week_delta is None %}Oldingi hafta ma'lumoti yo'q
+      {% elif week_delta >= 0 %}<b class="up">▲ {{ week_delta }}%</b> oldingi haftaga nisbatan
+      {% else %}<b class="down">▼ {{ week_delta }}%</b> oldingi haftaga nisbatan{% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="cols">
+  <div class="card span2">
+    <div class="card-h"><h2>Oxirgi 14 kun faolligi</h2><span class="legend"><i></i> kunlik yozuvlar soni</span></div>
+    <div class="bars">
+      {% for c in chart %}
+        <div class="bar-col {% if c.weekend %}wk{% endif %} {% if c.today %}now{% endif %}" title="{{ c.date|uzdate }} — {{ c.count }} ta yozuv, {{ c.people }} xodim">
+          <span class="bar-val">{% if c.count %}{{ c.count }}{% endif %}</span>
+          <div class="bar-track"><div class="bar-fill" style="height:{{ c.height }}%"></div></div>
+          <span class="bar-lbl">{{ c.label }}<small>{{ c.wd }}</small></span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h2>Hisobot bermaganlar</h2>{% if pending_n %}<span class="badge warn">{{ pending_n }}</span>{% endif %}</div>
+    {% if pending %}
+      <ul class="people">
+        {% for u in pending|slice:":10" %}
+          <li>
+            <span class="av {{ u|avclass }}">{{ u|initials }}</span>
+            <div><b>{{ u|fullname }}</b><small>{{ u.profile.department.name|default:"Bo'limsiz" }}</small></div>
+          </li>
+        {% endfor %}
+      </ul>
+      {% if pending_n > 10 %}<a class="more" href="{% url 'summary' %}?period=week">Yana {{ pending_n|add:"-10" }} ta xodim →</a>{% endif %}
+    {% else %}
+      <div class="empty ok"><svg class="ic"><use href="#i-check"/></svg><p>{% if is_workday %}Barcha xodimlar bugungi hisobotni topshirgan.{% else %}Bugun hisobot talab qilinmaydi.{% endif %}</p></div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="cols two">
+  <div class="card">
+    <div class="card-h"><h2>Bo'limlar bo'yicha bugun</h2></div>
+    {% if dep_rows %}
+      <ul class="deps">
+        {% for d in dep_rows %}
+          <li>
+            <div class="deps-t"><b>{{ d.name }}</b><span>{{ d.done }} / {{ d.total }}</span></div>
+            <div class="meter"><i style="width:{{ d.pct }}%"></i></div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty"><p>Hali xodim qo'shilmagan. <a href="{% url 'panel_import' %}">Ommaviy import</a> qiling.</p></div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h2>To'siq bor deb belgilanganlar</h2><span class="muted">7 kun</span></div>
+    {% if blocked %}
+      <ul class="feed">
+        {% for e in blocked %}
+          <li><span class="dot bad"></span><div><b>{{ e.user|fullname }}</b> · <span class="muted">{{ e.date|date:"d.m" }}</span><p>{{ e.description|truncatechars:90 }}</p></div></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty ok"><svg class="ic"><use href="#i-check"/></svg><p>Hozircha to'siq haqida xabar yo'q.</p></div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-h"><h2>Oxirgi yozuvlar</h2></div>
+  {% if recent %}
+  <div class="table-wrap">
+  <table class="tbl">
+    <thead><tr><th>Xodim</th><th>Ish</th><th>Sana</th><th class="num">Soat</th><th>Holati</th></tr></thead>
+    <tbody>
+    {% for e in recent %}
+      <tr>
+        <td><span class="who"><span class="av sm {{ e.user|avclass }}">{{ e.user|initials }}</span>{{ e.user|fullname }}</span></td>
+        <td class="wide">{{ e.description|truncatechars:80 }}</td>
+        <td>{{ e.date|date:"d.m.Y" }}</td>
+        <td class="num">{{ e.hours|hrs|default:"—" }}</td>
+        <td><span class="pill {{ e.status }}">{{ e.get_status_display }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+    <div class="empty"><p>Hali yozuvlar yo'q.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

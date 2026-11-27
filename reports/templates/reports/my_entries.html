@@ -13,15 +13,15 @@
     <a class="daychip {% if d.current %}cur{% endif %} {% if d.future %}future{% endif %} {% if d.n %}has{% endif %}"
        {% if not d.future %}href="?date={{ d.date|date:'Y-m-d' }}"{% endif %}>
       <span>{{ d.date|uzshort }}</span>
-      <b>{% if d.n %}{{ d.h|hrs }} s{% else %}—{% endif %}</b>
+      <b>{% if d.n %}{{ d.n }} ta{% else %}—{% endif %}</b>
     </a>
   {% endfor %}
-  <div class="weektotal">Hafta ({{ week_label }}): <b>{{ week_total|hrs }}</b> soat</div>
+  <div class="weektotal">Hafta ({{ week_label }}): <b>{{ week_count }}</b> ta yozuv{% if week_total %}, {{ week_total|hrs }} soat{% endif %}</div>
 </div>
 
 <div class="grid2">
   <section class="card">
-    <h2>Bajarilgan ishlar <span class="muted">· {{ day_hours|hrs }} soat</span></h2>
+    <h2>Bajarilgan ishlar <span class="muted">· {{ entries|length }} ta{% if day_hours %}, {{ day_hours|hrs }} soat{% endif %}</span></h2>
     {% if entries %}
       <ul class="entries">
       {% for e in entries %}
@@ -30,7 +30,7 @@
             <div class="e-text">{{ e.description|linebreaksbr }}</div>
             <div class="e-meta">
               <span class="tag {{ e.status }}">{{ e.get_status_display }}</span>
-              <span>{{ e.hours|hrs }} soat</span>
+              {% if e.hours %}<span>{{ e.hours|hrs }} soat</span>{% endif %}
             </div>
           </div>
           {% if can_edit %}
@@ -60,7 +60,7 @@
         {% for er in form.description.errors %}<span class="err">{{ er }}</span>{% endfor %}
       </label>
       <div class="row">
-        <label>Sarflangan soat
+        <label>Sarflangan soat <span class="opt">ixtiyoriy</span>
           {{ form.hours }}
           {% for er in form.hours.errors %}<span class="err">{{ er }}</span>{% endfor %}
         </label>

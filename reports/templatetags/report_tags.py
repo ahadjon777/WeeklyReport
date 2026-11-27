@@ -18,8 +18,26 @@ def uzshort(d):
 
 
 @register.filter
+def initials(user):
+    name = (user.get_full_name() or user.username).split()
+    return "".join(p[0] for p in name[:2]).upper() or "?"
+
+
+@register.filter
+def fullname(user):
+    return user.get_full_name() or user.username
+
+
+@register.filter
+def avclass(user):
+    return f"av{user.pk % 6}"
+
+
+@register.filter
 def hrs(value):
     """4.0 -> 4, 4.5 -> 4.5"""
+    if value in (None, ""):
+        return ""
     try:
         v = float(value)
     except (TypeError, ValueError):

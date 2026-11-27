@@ -1,0 +1,70 @@
+{% extends "panel/base.html" %}
+{% load report_tags %}
+{% block title %}Xodimlar{% endblock %}
+{% block heading %}Xodimlar <span class="sub">{{ count }} ta</span>{% endblock %}
+{% block actions %}
+  <a class="btn" href="{% url 'panel_import' %}"><svg class="ic"><use href="#i-upload"/></svg>Import</a>
+  <a class="btn primary" href="{% url 'panel_employee_new' %}"><svg class="ic"><use href="#i-plus"/></svg>Xodim qo'shish</a>
+{% endblock %}
+
+{% block content %}
+<form class="toolbar" method="get">
+  <div class="search"><svg class="ic"><use href="#i-search"/></svg><input type="search" name="q" value="{{ q }}" placeholder="Ism, familiya yoki login bo'yicha qidirish"></div>
+  <select name="department" onchange="this.form.submit()">
+    <option value="">Barcha bo'limlar</option>
+    {% for d in departments %}<option value="{{ d.pk }}" {% if sel_dep == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+    <option value="none" {% if sel_dep == "none" %}selected{% endif %}>Bo'limsiz</option>
+  </select>
+  <select name="status" onchange="this.form.submit()">
+    <option value="active" {% if status == "active" %}selected{% endif %}>Faol</option>
+    <option value="inactive" {% if status == "inactive" %}selected{% endif %}>O'chirilgan</option>
+    <option value="all" {% if status == "all" %}selected{% endif %}>Hammasi</option>
+  </select>
+  <button class="btn" type="submit">Qidirish</button>
+</form>
+
+<div class="card flush">
+{% if users %}
+<div class="table-wrap">
+<table class="tbl">
+  <thead><tr><th>Xodim</th><th>Login</th><th>Bo'lim</th><th>Oxirgi hisobot</th><th class="num">Shu oy, yozuv</th><th></th></tr></thead>
+  <tbody>
+  {% for u in users %}
+    <tr class="{% if not u.is_active %}off{% endif %}">
+      <td>
+        <span class="who">
+          <span class="av {{ u|avclass }}">{{ u|initials }}</span>
+          <span><b>{{ u|fullname }}</b>{% if u.is_staff %} <span class="pill role">Rahbar</span>{% endif %}
+            {% if u.profile.position %}<small>{{ u.profile.position }}</small>{% endif %}</span>
+        </span>
+      </td>
+      <td><code>{{ u.username }}</code></td>
+      <td>{{ u.profile.department.name|default:"—" }}</td>
+      <td>
+        {% if u.last_report %}
+          {% if u.last_report == today %}<span class="pill done">Bugun</span>{% else %}{{ u.last_report|date:"d.m.Y" }}{% endif %}
+        {% else %}<span class="muted">hali yo'q</span>{% endif %}
+      </td>
+      <td class="num">{{ u.month_count }}</td>
+      <td class="acts">
+        <a class="btn sm" href="{% url 'panel_employee_edit' u.pk %}">Tahrirlash</a>
+        {% if u.pk != user.pk %}
+        <form method="post" action="{% url 'panel_employee_toggle' u.pk %}" onsubmit="return confirm('{% if u.is_active %}Xodim o\'chirilsinmi? Tizimga kira olmaydi, lekin hisobotlari saqlanadi.{% else %}Xodim qayta faollashtirilsinmi?{% endif %}');">
+          {% csrf_token %}<button class="btn sm {% if u.is_active %}danger{% endif %}" type="submit">{% if u.is_active %}O'chirish{% else %}Faollashtirish{% endif %}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+  <div class="empty big">
+    <svg class="ic"><use href="#i-users"/></svg>
+    <p>Xodim topilmadi.</p>
+    <a class="btn primary" href="{% url 'panel_import' %}">Fayldan ommaviy qo'shish</a>
+  </div>
+{% endif %}
+</div>
+{% endblock %}

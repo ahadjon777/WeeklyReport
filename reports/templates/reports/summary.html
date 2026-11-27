@@ -39,9 +39,13 @@
 <div class="stats">
   <div class="stat"><span>Xodimlar</span><b>{{ totals.employees }}</b></div>
   <div class="stat"><span>Yozuvlar</span><b>{{ totals.entries }}</b></div>
-  <div class="stat"><span>Jami soat</span><b>{{ totals.hours|hrs }}</b></div>
+  {% if totals.hours %}<div class="stat"><span>Jami soat</span><b>{{ totals.hours|hrs }}</b></div>{% endif %}
   <div class="stat {% if totals.missing_days %}warn{% endif %}"><span>Kiritilmagan ish kunlari</span><b>{{ totals.missing_days }}</b></div>
-  <a class="btn" href="{% url 'export_excel' %}?{{ export_qs }}">Excel'ga yuklab olish</a>
+  <div class="exports">
+    <a class="btn" href="{% url 'export_word' %}?{{ export_qs }}">Word hisobot (.docx)</a>
+    {% if period != 'week' and period != 'month' %}<a class="btn ghost" href="{% url 'export_word' %}?{{ export_qs }}&detail=1">Word, barcha yozuvlar bilan</a>{% endif %}
+    <a class="btn ghost" href="{% url 'export_excel' %}?{{ export_qs }}">Excel</a>
+  </div>
 </div>
 
 {% if rows %}
@@ -50,7 +54,7 @@
   <thead>
     <tr>
       <th>Xodim</th><th>Bo'lim</th>
-      <th class="num">Yozuv</th><th class="num">Soat</th>
+      <th class="num">Yozuv</th>{% if totals.hours %}<th class="num">Soat</th>{% endif %}
       <th class="num">Hisobot kunlari</th><th class="num">Kiritilmagan</th>
       <th class="num">Bajarildi</th><th class="num">Jarayonda</th><th class="num">To'siq</th>
     </tr>
@@ -61,7 +65,7 @@
       <td><b>{{ r.name }}</b>{% if r.position %}<div class="muted small">{{ r.position }}</div>{% endif %}</td>
       <td>{{ r.department|default:"—" }}</td>
       <td class="num">{{ r.count }}</td>
-      <td class="num">{{ r.hours|hrs }}</td>
+      {% if totals.hours %}<td class="num">{{ r.hours|hrs }}</td>{% endif %}
       <td class="num">{{ r.days_reported }}</td>
       <td class="num {% if r.missing_days %}bad{% endif %}">{{ r.missing_days }}</td>
       <td class="num">{{ r.done }}</td>
@@ -78,7 +82,7 @@
               <div class="dayhead">{{ day|uzdate }}</div>
               <ul>
               {% for e in entries %}
-                <li>{{ e.description }} <span class="muted">— {{ e.hours|hrs }} s</span>
+                <li>{{ e.description }} {% if e.hours %}<span class="muted">— {{ e.hours|hrs }} s</span>{% endif %}
                   {% if e.status != 'done' %}<span class="tag {{ e.status }}">{{ e.get_status_display }}</span>{% endif %}
                 </li>
               {% endfor %}

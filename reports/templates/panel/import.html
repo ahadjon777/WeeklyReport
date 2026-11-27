@@ -1,0 +1,48 @@
+{% extends "panel/base.html" %}
+{% block title %}Ommaviy import{% endblock %}
+{% block heading %}Xodimlarni fayldan qo'shish{% endblock %}
+{% block actions %}<a class="btn" href="{% url 'panel_import_sample' %}"><svg class="ic"><use href="#i-download"/></svg>Shablonni yuklab olish</a>{% endblock %}
+
+{% block content %}
+<div class="cols two">
+  <form method="post" enctype="multipart/form-data" class="card form">
+    {% csrf_token %}
+    <h2>1. Faylni yuklang</h2>
+    <label class="drop">
+      <svg class="ic"><use href="#i-upload"/></svg>
+      <b id="dropname">.csv yoki .xlsx faylni tanlang</b>
+      <small>Eng ko'pi bilan 2 MB</small>
+      {{ form.file }}
+    </label>
+    {% for e in form.file.errors %}<span class="err">{{ e }}</span>{% endfor %}
+    <div class="form-actions"><button class="btn primary" type="submit">Yuklash va xodimlarni qo'shish</button></div>
+  </form>
+
+  <div class="card">
+    <h2>Fayl qanday bo'lishi kerak</h2>
+    <p class="muted">Birinchi qatorda sarlavha, keyin har bir xodim alohida qatorda. Faqat <b>full_name</b> majburiy.</p>
+    <div class="table-wrap"><table class="tbl compact">
+      <thead><tr><th>full_name</th><th>department</th><th>position</th><th>is_manager</th></tr></thead>
+      <tbody>
+        <tr><td>Aliyev Vali</td><td>IT bo'limi</td><td>Dasturchi</td><td></td></tr>
+        <tr><td>Rahimov Sardor</td><td>IT bo'limi</td><td>Boshliq</td><td>ha</td></tr>
+      </tbody>
+    </table></div>
+    <ul class="tips">
+      <li>Login va parol bo'sh bo'lsa, avtomatik yaratiladi.</li>
+      <li>Rahbar bo'lsa <b>is_manager</b> ga <b>ha</b> yozing.</li>
+      <li>Excel'da to'ldirib, <b>.xlsx</b> yoki <b>CSV UTF-8</b> qilib saqlang.</li>
+      <li>Mavjud login bo'lsa, o'sha xodim yangilanadi.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var inp = document.querySelector(".drop input[type=file]");
+  if (inp) inp.addEventListener("change", function () {
+    if (inp.files.length) document.getElementById("dropname").textContent = inp.files[0].name;
+  });
+</script>
+{% endblock %}

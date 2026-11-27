@@ -73,7 +73,7 @@ def build_workbook(rows, totals, title, period_name):
                 wd.append(
                     [
                         day, row["name"], row["department"], e.description,
-                        float(e.hours), STATUS_LABELS.get(e.status, e.status),
+                        float(e.hours) if e.hours is not None else None, STATUS_LABELS.get(e.status, e.status),
                     ]
                 )
     for cells in wd.iter_rows(min_row=2, max_col=1):

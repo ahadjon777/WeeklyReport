@@ -54,7 +54,7 @@ class WorkEntry(models.Model):
     date = models.DateField("Sana", db_index=True)
     description = models.TextField("Bajarilgan ish")
     hours = models.DecimalField(
-        "Sarflangan soat", max_digits=4, decimal_places=1, default=1
+        "Sarflangan soat (ixtiyoriy)", max_digits=4, decimal_places=1, null=True, blank=True
     )
     status = models.CharField(
         "Holati", max_length=10, choices=STATUS_CHOICES, default=STATUS_DONE

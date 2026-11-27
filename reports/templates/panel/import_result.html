@@ -1,0 +1,57 @@
+{% extends "panel/base.html" %}
+{% block title %}Import natijasi{% endblock %}
+{% block heading %}Import tayyor{% endblock %}
+{% block actions %}
+  <button class="btn" type="button" onclick="window.print()">Chop etish</button>
+  <button class="btn primary" type="button" id="dl"><svg class="ic"><use href="#i-download"/></svg>Parollarni yuklab olish (CSV)</button>
+{% endblock %}
+
+{% block content %}
+<div class="notice warn"><svg class="ic"><use href="#i-alert"/></svg><span><b>Parollar faqat shu sahifada ko'rinadi.</b> Sahifani yopishdan oldin yuklab oling yoki chop eting. Keyinroq parolni «Xodimlar» bo'limida yangilash mumkin.</span></div>
+
+<section class="tiles three">
+  <div class="tile tile-ok"><div class="tile-h">Yangi qo'shildi</div><div class="tile-v">{{ created_n }}</div></div>
+  <div class="tile"><div class="tile-h">Yangilandi</div><div class="tile-v">{{ updated_n }}</div></div>
+  <div class="tile"><div class="tile-h">Jami qator</div><div class="tile-v">{{ results|length }}</div></div>
+</section>
+
+<div class="card flush">
+<div class="table-wrap">
+<table class="tbl" id="res">
+  <thead><tr><th>Xodim</th><th>Bo'lim</th><th>Login</th><th>Parol</th><th></th></tr></thead>
+  <tbody>
+  {% for r in results %}
+    <tr>
+      <td><b>{{ r.name }}</b>{% if r.manager %} <span class="pill role">Rahbar</span>{% endif %}</td>
+      <td>{{ r.department|default:"—" }}</td>
+      <td><code>{{ r.username }}</code></td>
+      <td>{% if r.password %}<code class="pw">{{ r.password }}</code>{% else %}<span class="muted">o'zgarmagan</span>{% endif %}</td>
+      <td>{% if r.created %}<span class="pill done">Yangi</span>{% else %}<span class="pill progress">Yangilandi</span>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+</div>
+<p><a class="btn" href="{% url 'panel_employees' %}">Xodimlar ro'yxatiga o'tish →</a></p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("dl").addEventListener("click", function () {
+    var rows = [["Xodim", "Bo'lim", "Login", "Parol"]];
+    document.querySelectorAll("#res tbody tr").forEach(function (tr) {
+      var c = tr.children;
+      var pw = c[3].querySelector(".pw");
+      rows.push([c[0].querySelector("b").textContent, c[1].textContent.trim().replace("—", ""), c[2].textContent.trim(), pw ? pw.textContent : ""]);
+    });
+    var csv = "﻿" + rows.map(function (r) {
+      return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(",");
+    }).join("\r\n");
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = "parollar.csv";
+    a.click();
+  });
+</script>
+{% endblock %}

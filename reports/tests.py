@@ -85,3 +85,158 @@ class ReminderTests(TestCase):
             self.assertEqual(data["time"], "13:00")
             self.client.post(reverse("reminder_ack"), {"slot_id": data["slot_id"]})
             self.assertFalse(self.client.get(reverse("reminder_check")).json()["due"])
+
+
+class PanelTests(TestCase):
+    def setUp(self):
+        self.boss = User.objects.create_user("boss", password="x12345", is_staff=True, first_name="Boss")
+        self.emp = User.objects.create_user("ali", password="x12345", first_name="Ali", last_name="Valiyev")
+
+    def test_employee_blocked_from_panel(self):
+        self.client.login(username="ali", password="x12345")
+        for name in ("panel", "panel_employees", "panel_departments", "panel_reminders", "panel_import"):
+            r = self.client.get(reverse(name))
+            self.assertEqual(r.status_code, 302, name)
+            self.assertEqual(r.url, reverse("my_entries"))
+
+    def test_pages_render_for_manager(self):
+        self.client.login(username="boss", password="x12345")
+        for name in ("panel", "panel_employees", "panel_employee_new", "panel_departments", "panel_reminders", "panel_import", "panel_import_sample"):
+            self.assertEqual(self.client.get(reverse(name)).status_code, 200, name)
+
+    def test_create_employee_autopassword(self):
+        self.client.login(username="boss", password="x12345")
+        r = self.client.post(reverse("panel_employee_new"), {
+            "last_name": "Karimov", "first_name": "Sardor", "username": "karimov", "is_active": "on"})
+        self.assertEqual(r.status_code, 302)
+        u = User.objects.get(username="karimov")
+        self.assertFalse(u.is_staff)
+        self.assertTrue(u.has_usable_password())
+
+    def test_duplicate_username_rejected(self):
+        self.client.login(username="boss", password="x12345")
+        r = self.client.post(reverse("panel_employee_new"), {
+            "last_name": "X", "first_name": "Y", "username": "ali"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Bu login band")
+
+    def test_cannot_deactivate_self(self):
+        self.client.login(username="boss", password="x12345")
+        self.client.post(reverse("panel_employee_toggle", args=[self.boss.pk]))
+        self.boss.refresh_from_db()
+        self.assertTrue(self.boss.is_active)
+
+    def test_import_csv_and_xlsx(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.login(username="boss", password="x12345")
+        csv_bytes = "full_name;department;position\nAliyev Vali;IT;Dasturchi\nРахимов Сардор;IT;\n".encode("utf-8")
+        r = self.client.post(reverse("panel_import"), {"file": SimpleUploadedFile("x.csv", csv_bytes)})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.context["created_n"], 2)
+        self.assertTrue(User.objects.filter(username="raximov.sardor").exists())
+        from io import BytesIO
+        from openpyxl import Workbook
+        wb = Workbook(); ws = wb.active
+        ws.append(["FIO", "Bo'lim", "Lavozim", "Rahbar"]); ws.append(["Toshmatov Ali", "HR", "Boshliq", "ha"])
+        buf = BytesIO(); wb.save(buf)
+        r = self.client.post(reverse("panel_import"), {"file": SimpleUploadedFile("x.xlsx", buf.getvalue())})
+        self.assertEqual(r.context["created_n"], 1)
+        self.assertTrue(User.objects.get(username="toshmatov.ali").is_staff)
+
+    def test_departments_and_reminders(self):
+        self.client.login(username="boss", password="x12345")
+        self.client.post(reverse("panel_departments"), {"action": "add", "name": "Buxgalteriya"})
+        from .models import Department
+        self.assertTrue(Department.objects.filter(name="Buxgalteriya").exists())
+        slot = ReminderSlot.objects.first()
+        data = {"form-TOTAL_FORMS": "3", "form-INITIAL_FORMS": "3", "form-MIN_NUM_FORMS": "0", "form-MAX_NUM_FORMS": "1000"}
+        for i, s in enumerate(ReminderSlot.objects.order_by("time")):
+            data.update({f"form-{i}-id": s.pk, f"form-{i}-time": "08:30" if i == 0 else s.time.strftime("%H:%M"),
+                         f"form-{i}-message": "Yangi matn" if i == 0 else s.message, f"form-{i}-active": "on"})
+        r = self.client.post(reverse("panel_reminders"), data)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(ReminderSlot.objects.order_by("time").first().message, "Yangi matn")
+
+    def test_login_redirects_by_role(self):
+        r = self.client.post(reverse("login"), {"username": "boss", "password": "x12345"})
+        self.assertEqual(r.url, reverse("panel"))
+        self.client.logout()
+        r = self.client.post(reverse("login"), {"username": "ali", "password": "x12345"})
+        self.assertEqual(r.url, reverse("my_entries"))
+
+
+class WordExportTests(TestCase):
+    def setUp(self):
+        self.boss = User.objects.create_user("boss", password="x12345", is_staff=True)
+        self.emp = User.objects.create_user("ali", password="x12345", first_name="Ali", last_name="Valiyev")
+        WorkEntry.objects.create(user=self.emp, date=timezone.localdate(), description="Server tekshirildi", hours=3)
+
+    def _doc(self, user, **params):
+        from io import BytesIO
+        from docx import Document
+        self.client.login(username=user, password="x12345")
+        r = self.client.get(reverse("export_word"), params)
+        self.assertEqual(r.status_code, 200)
+        doc = Document(BytesIO(r.content))
+        text = "\n".join(p.text for p in doc.paragraphs)
+        for t in doc.tables:
+            for row in t.rows:
+                text += "\n" + " | ".join(c.text for c in row.cells)
+        return text
+
+    def test_week_detailed(self):
+        text = self._doc("boss", period="week")
+        self.assertIn("HAFTALIK HISOBOT", text)
+        self.assertIn("Ali Valiyev", text)
+        self.assertIn("Server tekshirildi", text)
+
+    def test_year_monthly_and_detail_flag(self):
+        self.assertNotIn("Server tekshirildi", self._doc("boss", period="year"))
+        self.assertIn("Server tekshirildi", self._doc("boss", period="year", detail="1"))
+
+    def test_employee_sees_only_self(self):
+        other = User.objects.create_user("vali", password="x12345", last_name="Boshqa")
+        WorkEntry.objects.create(user=other, date=timezone.localdate(), description="Yashirin ish", hours=1)
+        text = self._doc("ali", period="month")
+        self.assertIn("Server tekshirildi", text)
+        self.assertNotIn("Yashirin ish", text)
+
+
+class OptionalHoursTests(TestCase):
+    def setUp(self):
+        self.emp = User.objects.create_user("ali", password="x12345", first_name="Ali", last_name="Valiyev")
+        self.boss = User.objects.create_user("boss", password="x12345", is_staff=True)
+
+    def test_entry_without_hours_saves(self):
+        self.client.login(username="ali", password="x12345")
+        r = self.client.post("/", {"description": "Soatsiz yozuv", "hours": "", "status": "done"})
+        self.assertEqual(r.status_code, 302)
+        e = WorkEntry.objects.get()
+        self.assertIsNone(e.hours)
+
+    def test_pages_and_exports_work_without_hours(self):
+        from io import BytesIO
+        from docx import Document
+        WorkEntry.objects.create(user=self.emp, date=timezone.localdate(), description="Soatsiz ish", hours=None)
+        self.client.login(username="ali", password="x12345")
+        self.assertEqual(self.client.get("/").status_code, 200)
+        self.assertEqual(self.client.get(reverse("summary"), {"period": "month"}).status_code, 200)
+        self.assertEqual(self.client.get(reverse("export_excel"), {"period": "month"}).status_code, 200)
+        r = self.client.get(reverse("export_word"), {"period": "month"})
+        doc = Document(BytesIO(r.content))
+        heads = [c.text for t in doc.tables for c in t.rows[0].cells]
+        self.assertNotIn("Soat", heads)
+        self.assertIn("Soatsiz ish", "\n".join(c.text for t in doc.tables for row in t.rows for c in row.cells))
+        self.client.logout()
+        self.client.login(username="boss", password="x12345")
+        self.assertEqual(self.client.get(reverse("panel")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("panel_employees")).status_code, 200)
+
+    def test_mixed_hours_shows_column(self):
+        from io import BytesIO
+        from docx import Document
+        WorkEntry.objects.create(user=self.emp, date=timezone.localdate(), description="A", hours=None)
+        WorkEntry.objects.create(user=self.emp, date=timezone.localdate(), description="B", hours=2)
+        self.client.login(username="ali", password="x12345")
+        doc = Document(BytesIO(self.client.get(reverse("export_word"), {"period": "month"}).content))
+        self.assertIn("Soat", [c.text for t in doc.tables for c in t.rows[0].cells])
