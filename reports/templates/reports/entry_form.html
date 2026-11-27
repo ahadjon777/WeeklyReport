@@ -1,28 +1,34 @@
-{% extends "reports/base.html" %}
+{% extends "panel/base.html" %}
 {% load report_tags %}
 {% block title %}Yozuvni tahrirlash{% endblock %}
+{% block heading %}Yozuvni tahrirlash <span class="sub">{{ entry.date|uzdate }}{% if entry.user_id != user.id %} · {{ entry.user|fullname }}{% endif %}</span>{% endblock %}
+{% block actions %}<a class="btn" href="/?date={{ entry.date|date:'Y-m-d' }}">← Orqaga</a>{% endblock %}
+
 {% block content %}
-<div class="card narrow">
-  <h1>Yozuvni tahrirlash</h1>
-  <p class="muted">{{ entry.date|uzdate }}{% if entry.user_id != user.id %} · {{ entry.user.get_full_name|default:entry.user.username }}{% endif %}</p>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    <label>Bajarilgan ish
+<form method="post" class="card form">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="form-block">
+    <label>Nima ish qildingiz?
       {{ form.description }}
       {% for er in form.description.errors %}<span class="err">{{ er }}</span>{% endfor %}
     </label>
-    <div class="row">
-      <label>Sarflangan soat <span class="opt">ixtiyoriy</span>
-        {{ form.hours }}
-        {% for er in form.hours.errors %}<span class="err">{{ er }}</span>{% endfor %}
-      </label>
-      <label>Holati {{ form.status }}</label>
+  </div>
+  <div class="form-block">
+    <label>Holati</label>
+    <div class="segs">
+      {% for r in form.status %}<label class="seg s-{{ r.data.value }}">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}
     </div>
-    <div class="modal-actions">
-      <button class="btn" type="submit">Saqlash</button>
-      <a class="btn ghost" href="/?date={{ entry.date|date:'Y-m-d' }}">Bekor qilish</a>
-    </div>
-  </form>
-</div>
+  </div>
+  <div class="form-block" style="max-width:260px">
+    <label>Sarflangan soat <span class="opt">ixtiyoriy</span>
+      {{ form.hours }}
+      {% for er in form.hours.errors %}<span class="err">{{ er }}</span>{% endfor %}
+    </label>
+  </div>
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Saqlash</button>
+    <a class="btn" href="/?date={{ entry.date|date:'Y-m-d' }}">Bekor qilish</a>
+  </div>
+</form>
 {% endblock %}

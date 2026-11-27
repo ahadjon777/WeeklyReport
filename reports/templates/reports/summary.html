@@ -1,55 +1,55 @@
-{% extends "reports/base.html" %}
+{% extends "panel/base.html" %}
 {% load report_tags %}
-{% block title %}Yig'ma hisobot{% endblock %}
-{% block content %}
-<h1>Yig'ma hisobotlar</h1>
+{% block title %}Yig'ma hisobotlar{% endblock %}
+{% block heading %}Yig'ma hisobotlar{% endblock %}
+{% block actions %}
+  <a class="btn primary" href="{% url 'export_word' %}?{{ export_qs }}"><svg class="ic"><use href="#i-download"/></svg>Word hisobot</a>
+  {% if period != 'week' and period != 'month' %}<a class="btn" href="{% url 'export_word' %}?{{ export_qs }}&detail=1">Word, barcha yozuvlar bilan</a>{% endif %}
+  <a class="btn" href="{% url 'export_excel' %}?{{ export_qs }}"><svg class="ic"><use href="#i-download"/></svg>Excel</a>
+{% endblock %}
 
+{% block content %}
 <div class="tabs">
   {% for key, name in periods %}
     <a class="{% if key == period %}on{% endif %}" href="?period={{ key }}&date={{ ref|date:'Y-m-d' }}{% if sel_department %}&department={{ sel_department }}{% endif %}{% if sel_user %}&user={{ sel_user }}{% endif %}">{{ name }}</a>
   {% endfor %}
 </div>
 
-<div class="daynav">
-  <a class="btn ghost" href="{{ prev_url }}">← Oldingi</a>
-  <h2>{{ period_name }}: {{ label }}</h2>
-  {% if next_url %}<a class="btn ghost" href="{{ next_url }}">Keyingi →</a>{% else %}<span></span>{% endif %}
+<div class="pernav">
+  <a class="btn" href="{{ prev_url }}">← Oldingi</a>
+  <h2>{{ label }}</h2>
+  {% if next_url %}<a class="btn" href="{{ next_url }}">Keyingi →</a>{% else %}<span></span>{% endif %}
 </div>
 
 {% if user.is_staff %}
-<form class="filters" method="get">
+<form class="filters-bar" method="get">
   <input type="hidden" name="period" value="{{ period }}">
   <input type="hidden" name="date" value="{{ ref|date:'Y-m-d' }}">
   <label>Bo'lim
-    <select name="department">
+    <select name="department" onchange="this.form.submit()">
       <option value="">Barchasi</option>
       {% for d in departments %}<option value="{{ d.pk }}" {% if sel_department == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
     </select>
   </label>
   <label>Xodim
-    <select name="user">
+    <select name="user" onchange="this.form.submit()">
       <option value="">Barchasi</option>
       {% for pk, name in all_users %}<option value="{{ pk }}" {% if sel_user == pk|stringformat:"s" %}selected{% endif %}>{{ name }}</option>{% endfor %}
     </select>
   </label>
-  <button class="btn ghost" type="submit">Saralash</button>
 </form>
 {% endif %}
 
-<div class="stats">
-  <div class="stat"><span>Xodimlar</span><b>{{ totals.employees }}</b></div>
-  <div class="stat"><span>Yozuvlar</span><b>{{ totals.entries }}</b></div>
-  {% if totals.hours %}<div class="stat"><span>Jami soat</span><b>{{ totals.hours|hrs }}</b></div>{% endif %}
-  <div class="stat {% if totals.missing_days %}warn{% endif %}"><span>Kiritilmagan ish kunlari</span><b>{{ totals.missing_days }}</b></div>
-  <div class="exports">
-    <a class="btn" href="{% url 'export_word' %}?{{ export_qs }}">Word hisobot (.docx)</a>
-    {% if period != 'week' and period != 'month' %}<a class="btn ghost" href="{% url 'export_word' %}?{{ export_qs }}&detail=1">Word, barcha yozuvlar bilan</a>{% endif %}
-    <a class="btn ghost" href="{% url 'export_excel' %}?{{ export_qs }}">Excel</a>
-  </div>
-</div>
+<section class="tiles">
+  <div class="tile"><div class="tile-h">Xodimlar</div><div class="tile-v">{{ totals.employees }}</div></div>
+  <div class="tile"><div class="tile-h">Yozuvlar</div><div class="tile-v">{{ totals.entries }}</div></div>
+  {% if totals.hours %}<div class="tile"><div class="tile-h">Jami soat</div><div class="tile-v">{{ totals.hours|hrs }}<span> soat</span></div></div>{% endif %}
+  <div class="tile {% if totals.missing_days %}tile-warn{% else %}tile-ok{% endif %}"><div class="tile-h">Kiritilmagan ish kunlari</div><div class="tile-v">{{ totals.missing_days }}</div></div>
+</section>
 
 {% if rows %}
 <div class="card flush">
+<div class="table-wrap">
 <table class="tbl">
   <thead>
     <tr>
@@ -62,7 +62,7 @@
   <tbody>
   {% for r in rows %}
     <tr>
-      <td><b>{{ r.name }}</b>{% if r.position %}<div class="muted small">{{ r.position }}</div>{% endif %}</td>
+      <td><span class="who"><span class="av sm {{ r.user|avclass }}">{{ r.user|initials }}</span><span><b>{{ r.name }}</b>{% if r.position %}<small>{{ r.position }}</small>{% endif %}</span></span></td>
       <td>{{ r.department|default:"—" }}</td>
       <td class="num">{{ r.count }}</td>
       {% if totals.hours %}<td class="num">{{ r.hours|hrs }}</td>{% endif %}
@@ -74,16 +74,16 @@
     </tr>
     {% if r.days %}
     <tr class="detail">
-      <td colspan="9">
-        <details>
+      <td colspan="{% if totals.hours %}9{% else %}8{% endif %}">
+        <details class="dd">
           <summary>Bajarilgan ishlar ({{ r.count }})</summary>
           {% for day, entries in r.days %}
             <div class="dayblock">
               <div class="dayhead">{{ day|uzdate }}</div>
               <ul>
               {% for e in entries %}
-                <li>{{ e.description }} {% if e.hours %}<span class="muted">— {{ e.hours|hrs }} s</span>{% endif %}
-                  {% if e.status != 'done' %}<span class="tag {{ e.status }}">{{ e.get_status_display }}</span>{% endif %}
+                <li>{{ e.description }}{% if e.hours %} <span class="muted">— {{ e.hours|hrs }} s</span>{% endif %}
+                  {% if e.status != 'done' %}<span class="pill {{ e.status }}">{{ e.get_status_display }}</span>{% endif %}
                 </li>
               {% endfor %}
               </ul>
@@ -97,7 +97,8 @@
   </tbody>
 </table>
 </div>
+</div>
 {% else %}
-  <p class="muted">Tanlangan davr uchun ma'lumot topilmadi.</p>
+  <div class="card"><div class="empty"><p>Tanlangan davr uchun ma'lumot topilmadi.</p></div></div>
 {% endif %}
 {% endblock %}

@@ -10,10 +10,11 @@ class WorkEntryForm(forms.ModelForm):
         model = WorkEntry
         fields = ["description", "hours", "status"]
         widgets = {
+            "status": forms.RadioSelect,
             "description": forms.Textarea(
-                attrs={"rows": 3, "placeholder": "Nima ish qildingiz?"}
+                attrs={"rows": 4, "placeholder": "Masalan: mijozlar arizalari ko'rib chiqildi"}
             ),
-            "hours": forms.NumberInput(attrs={"step": "0.5", "min": "0.5", "max": "16", "placeholder": "ixtiyoriy"}),
+            "hours": forms.NumberInput(attrs={"step": "0.5", "min": "0.5", "max": "16", "placeholder": "masalan, 2"}),
         }
 
     def clean_hours(self):

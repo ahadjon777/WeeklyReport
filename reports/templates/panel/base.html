@@ -30,28 +30,28 @@
 <input type="checkbox" id="navtoggle" class="navtoggle" hidden>
 <div class="shell">
   <aside class="side">
-    <a class="logo" href="{% url 'panel' %}">
+    <a class="logo" href="{% if user.is_staff %}{% url 'panel' %}{% else %}{% url 'my_entries' %}{% endif %}">
       <span class="logo-mark">W</span>
-      <span>WeeklyReport<small>Boshqaruv paneli</small></span>
+      <span>WeeklyReport<small>{% if user.is_staff %}Boshqaruv paneli{% else %}Ish hisoboti{% endif %}</small></span>
     </a>
     <nav>
       <div class="nav-label">Asosiy</div>
-      <a href="{% url 'panel' %}" class="{% if url == 'panel' %}on{% endif %}"><svg class="ic"><use href="#i-home"/></svg>Bosh sahifa</a>
-      <a href="{% url 'summary' %}"><svg class="ic"><use href="#i-chart"/></svg>Yig'ma hisobotlar</a>
+      {% if user.is_staff %}<a href="{% url 'panel' %}" class="{% if url == 'panel' %}on{% endif %}"><svg class="ic"><use href="#i-home"/></svg>Bosh sahifa</a>{% endif %}
+      <a href="{% url 'my_entries' %}" class="{% if url == 'my_entries' or url == 'entry_edit' %}on{% endif %}"><svg class="ic"><use href="#i-file"/></svg>Kunlik hisobot</a>
+      <a href="{% url 'summary' %}" class="{% if url == 'summary' %}on{% endif %}"><svg class="ic"><use href="#i-chart"/></svg>Yig'ma hisobotlar</a>
 
+      {% if user.is_staff %}
       <div class="nav-label">Boshqarish</div>
       <a href="{% url 'panel_employees' %}" class="{% if 'employee' in url %}on{% endif %}"><svg class="ic"><use href="#i-users"/></svg>Xodimlar</a>
       <a href="{% url 'panel_departments' %}" class="{% if url == 'panel_departments' %}on{% endif %}"><svg class="ic"><use href="#i-building"/></svg>Bo'limlar</a>
       <a href="{% url 'panel_reminders' %}" class="{% if url == 'panel_reminders' %}on{% endif %}"><svg class="ic"><use href="#i-bell"/></svg>Eslatmalar</a>
       <a href="{% url 'panel_import' %}" class="{% if 'import' in url %}on{% endif %}"><svg class="ic"><use href="#i-upload"/></svg>Ommaviy import</a>
-
-      <div class="nav-label">Boshqa</div>
-      <a href="{% url 'my_entries' %}"><svg class="ic"><use href="#i-file"/></svg>Mening hisobotim</a>
       {% if user.is_superuser %}<a href="/admin/"><svg class="ic"><use href="#i-shield"/></svg>Texnik admin</a>{% endif %}
+      {% endif %}
     </nav>
     <div class="me">
       <span class="av {{ user|avclass }}">{{ user|initials }}</span>
-      <div class="me-t"><b>{{ user|fullname }}</b><small>Rahbar</small></div>
+      <div class="me-t"><b>{{ user|fullname }}</b><small>{% if user.is_staff %}Rahbar{% else %}Xodim{% endif %}</small></div>
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button title="Chiqish" aria-label="Chiqish"><svg class="ic"><use href="#i-logout"/></svg></button></form>
     </div>
   </aside>
@@ -72,6 +72,29 @@
   </div>
 </div>
 {% endwith %}
+{% if user.is_authenticated and not user.is_superuser %}
+<div id="reminder" class="modal-bg" hidden>
+  <div class="modal" role="alertdialog" aria-live="assertive">
+    <div class="modal-icon"><svg class="ic"><use href="#i-bell"/></svg></div>
+    <div class="modal-time" id="reminder-time"></div>
+    <h2>Eslatma</h2>
+    <p id="reminder-msg"></p>
+    <p class="muted" id="reminder-stat"></p>
+    <div class="modal-actions">
+      <a class="btn primary" id="reminder-go" href="{% url 'my_entries' %}">Hisobotga o'tish</a>
+      <button class="btn" id="reminder-close" type="button">Keyinroq</button>
+    </div>
+  </div>
+</div>
+<script>
+  window.REMINDER_URLS = {
+    check: "{% url 'reminder_check' %}",
+    ack: "{% url 'reminder_ack' %}",
+    csrf: "{{ csrf_token }}"
+  };
+</script>
+<script src="{% static 'reports/reminders.js' %}"></script>
+{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>
