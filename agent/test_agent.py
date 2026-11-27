@@ -40,5 +40,15 @@ class PickDueTests(unittest.TestCase):
         self.assertEqual(shown, [1, 2, 3])
 
 
+class ServerUrlTests(unittest.TestCase):
+    def test_normalize(self):
+        n = a.normalize_server
+        self.assertEqual(n("192.168.0.52"), "http://192.168.0.52:8000")
+        self.assertEqual(n("http://192.168.0.52"), "http://192.168.0.52:8000")
+        self.assertEqual(n("http://192.168.0.52:8000/"), "http://192.168.0.52:8000")
+        self.assertEqual(n("  192.168.0.52:9000 "), "http://192.168.0.52:9000")
+        self.assertEqual(n(""), "")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -87,10 +87,23 @@ def save_state(st):
 
 # ------------------------------------------------------------------ tarmoq
 
+def normalize_server(value):
+    """'192.168.0.52' -> 'http://192.168.0.52:8000' (http:// va port 8000 avtomatik qo'shiladi)."""
+    v = (value or "").strip().rstrip("/")
+    if not v:
+        return ""
+    if "://" not in v:
+        v = "http://" + v
+    parts = urllib.parse.urlsplit(v)
+    if parts.port is None:
+        v = f"{parts.scheme}://{parts.hostname}:8000{parts.path}".rstrip("/")
+    return v
+
+
 def load_config():
     cp = configparser.ConfigParser()
     cp.read([CONFIG_PATH, os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent_config.ini")], encoding="utf-8")
-    server = cp.get("agent", "server", fallback="").strip().rstrip("/")
+    server = normalize_server(cp.get("agent", "server", fallback=""))
     username = cp.get("agent", "username", fallback="").strip()
     if not server or not username:
         raise SystemExit("agent_config.ini topilmadi yoki to'liq emas (server va username kerak).")
