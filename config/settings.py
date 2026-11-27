@@ -80,6 +80,12 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "my_entries"
 LOGOUT_REDIRECT_URL = "login"
 
+# Eslatma sozlamalari
+# True: brauzer ochiq bo'lsa, sayt ichida ham eslatma oynasi chiqadi
+BROWSER_REMINDERS = True
+# True: Windows eslatma dasturi bugun hisobot kiritgan xodimni bezovta qilmaydi
+REMIND_ONLY_IF_NO_REPORT = False
+
 # Ish kunlari: 0=Dushanba ... 6=Yakshanba
 WORK_DAYS = [0, 1, 2, 3, 4]
 # Xodim necha kun orqaga qarab hisobot kirita/tahrirlay oladi

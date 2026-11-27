@@ -24,6 +24,7 @@ urlpatterns = [
     path("hisobot/word/", views.export_word, name="export_word"),
     path("eslatma/tekshir/", views.reminder_check, name="reminder_check"),
     path("eslatma/yopish/", views.reminder_ack, name="reminder_ack"),
+    path("eslatma/api/", views.agent_schedule, name="agent_schedule"),
     path(
         "kirish/",
         views.StaffAwareLoginView.as_view(template_name="reports/login.html"),

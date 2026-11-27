@@ -26,8 +26,27 @@ Xodim ish soatini yozishi shart emas. Soat bo'sh qolsa, hisobotlarda yozuvlar so
 - **Ommaviy:** `xodimlar.csv` ni to'ldiring (faqat `full_name` majburiy) va `import_employees.bat` ni bosing. Login va parollar `parollar.csv` ga yoziladi.
 - **Yakka:** brauzerda `/admin/` > Foydalanuvchilar.
 
+## Eslatma dasturi (brauzer yopiq bo'lsa ham)
+Eslatma har bir xodimning kompyuterida alohida kichik dastur orqali chiqadi (`agent` papkasi). Standart vaqt: **11:00, 16:00, 19:00** (dushanba–juma). Vaqtni rahbar panelidagi «Eslatmalar» bo'limida o'zgartirasiz, dasturlar o'zi yangilanadi.
+
+**Bir marta tayyorlash (Python o'rnatilgan kompyuterda, masalan sizniki):**
+1. `agent\server.txt` ga server manzilini yozing, masalan `http://192.168.1.10:8000`.
+2. `agent\build_agent.bat` ni bosing, `weekly_agent.exe` yaratiladi.
+
+**Har bir xodim kompyuteriga o'rnatish (1 daqiqa):**
+1. `agent` papkasini (kamida `weekly_agent.exe`, `install_agent.bat`, `server.txt`) flesh yoki umumiy papka orqali nusxalang.
+2. `install_agent.bat` ni ikki marta bosing va shu xodimning **loginini** kiriting.
+3. Sinov eslatma oynasi chiqadi. Shundan keyin dastur kompyuter yoqilganda o'zi ishga tushadi.
+
+Olib tashlash: `uninstall_agent.bat`. Dastur jurnali: `%LOCALAPPDATA%\WeeklyReport\agent.log`.
+
+Muhim:
+- Server kompyuterining IP manzili o'zgarmasligi kerak (routerda shu kompyuterga doimiy IP bering), aks holda dastur serverni topa olmaydi.
+- Kompyuter kech yoqilsa, eng oxirgi o'tgan eslatma 3 soat ichida ko'rsatiladi.
+- `config/settings.py` da: `REMIND_ONLY_IF_NO_REPORT = True` qilsangiz, bugun hisobot kiritgan xodimga eslatma chiqmaydi; `BROWSER_REMINDERS = False` qilsangiz, sayt ichidagi eslatma o'chadi (dastur o'rnatilgan bo'lsa, takrorlanmasligi uchun).
+
 ## Eslatmalar (kuniga 3 marta)
-Standart vaqt: 09:00, 13:00, 17:00 (dushanba–juma). Xodim sahifani ochiq tutsa, shu vaqtda oyna chiqadi, ovoz eshitiladi va sarlavha miltillaydi. Vaqt va matnni `/admin/` > Eslatma vaqtlari bo'limida o'zgartirasiz.
+Standart vaqt: 11:00, 16:00, 19:00 (dushanba–juma). Xodim sahifani ochiq tutsa, shu vaqtda oyna chiqadi, ovoz eshitiladi va sarlavha miltillaydi. Vaqt va matnni `/admin/` > Eslatma vaqtlari bo'limida o'zgartirasiz.
 
 ## Sozlamalar (`config/settings.py`)
 - `WORK_DAYS` — ish kunlari

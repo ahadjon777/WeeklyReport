@@ -77,12 +77,12 @@ class ReminderTests(TestCase):
     def test_due_then_ack(self):
         from unittest import mock
 
-        now = timezone.make_aware(dt.datetime(2026, 11, 23, 13, 5))  # dushanba 13:05
+        now = timezone.make_aware(dt.datetime(2026, 11, 23, 16, 5))  # dushanba 16:05
         with mock.patch("reports.views.timezone.localtime", return_value=now), \
              mock.patch("reports.views.timezone.make_aware", side_effect=timezone.make_aware):
             data = self.client.get(reverse("reminder_check")).json()
             self.assertTrue(data["due"])
-            self.assertEqual(data["time"], "13:00")
+            self.assertEqual(data["time"], "16:00")
             self.client.post(reverse("reminder_ack"), {"slot_id": data["slot_id"]})
             self.assertFalse(self.client.get(reverse("reminder_check")).json()["due"])
 
@@ -240,3 +240,31 @@ class OptionalHoursTests(TestCase):
         self.client.login(username="ali", password="x12345")
         doc = Document(BytesIO(self.client.get(reverse("export_word"), {"period": "month"}).content))
         self.assertIn("Soat", [c.text for t in doc.tables for c in t.rows[0].cells])
+
+
+class AgentApiTests(TestCase):
+    def test_schedule_public_and_reported_flag(self):
+        u = User.objects.create_user("ali", password="x12345")
+        r = self.client.get(reverse("agent_schedule"), {"u": "ali"})
+        self.assertEqual(r.status_code, 200)
+        d = r.json()
+        self.assertEqual([s["time"] for s in d["slots"]], ["11:00", "16:00", "19:00"])
+        self.assertTrue(d["user_found"])
+        self.assertFalse(d["reported_today"])
+        WorkEntry.objects.create(user=u, date=timezone.localdate(), description="Ish", hours=None)
+        self.assertTrue(self.client.get(reverse("agent_schedule"), {"u": "ali"}).json()["reported_today"])
+
+    def test_unknown_user_and_inactive_slot(self):
+        d = self.client.get(reverse("agent_schedule"), {"u": "yoq"}).json()
+        self.assertFalse(d["user_found"])
+        ReminderSlot.objects.filter(time=dt.time(11, 0)).update(active=False)
+        d = self.client.get(reverse("agent_schedule"), {"u": "yoq"}).json()
+        self.assertEqual(len(d["slots"]), 2)
+
+    def test_browser_reminders_can_be_disabled(self):
+        from unittest import mock
+        User.objects.create_user("ali", password="x12345")
+        self.client.login(username="ali", password="x12345")
+        now = timezone.make_aware(dt.datetime(2026, 11, 23, 16, 5))
+        with mock.patch("reports.views.timezone.localtime", return_value=now), self.settings(BROWSER_REMINDERS=False):
+            self.assertFalse(self.client.get(reverse("reminder_check")).json()["due"])

@@ -11,16 +11,16 @@ def create_default_slots(sender, **kwargs):
         ReminderSlot.objects.bulk_create(
             [
                 ReminderSlot(
-                    time=dt.time(9, 0),
-                    message="Ish kuni boshlandi. Bugungi ishlaringizni hisobotga kiritishni unutmang.",
+                    time=dt.time(11, 0),
+                    message="Bugungi bajarilgan ishlarni hisobotga kiritishni unutmang.",
                 ),
                 ReminderSlot(
-                    time=dt.time(13, 0),
-                    message="Kun yarmi o'tdi. Bajarilgan ishlarni hisobotga yozib qo'ying.",
+                    time=dt.time(16, 0),
+                    message="Ish kuni tugashiga oz qoldi. Bajarilgan ishlarni hisobotga yozib qo'ying.",
                 ),
                 ReminderSlot(
-                    time=dt.time(17, 0),
-                    message="Ish kuni tugayapti. Bugungi hisobotni yakunlang.",
+                    time=dt.time(19, 0),
+                    message="Bugungi hisobotni yakunlang va kompyuterni o'chirishdan oldin yozuvlarni tekshiring.",
                 ),
             ]
         )

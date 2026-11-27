@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
@@ -266,7 +267,11 @@ def reminder_check(request):
     user = request.user
     now = timezone.localtime()
     today = now.date()
-    if user.is_superuser or today.weekday() not in settings.WORK_DAYS:
+    if (
+        not settings.BROWSER_REMINDERS
+        or user.is_superuser
+        or today.weekday() not in settings.WORK_DAYS
+    ):
         return JsonResponse({"due": False})
 
     acked = set(
@@ -300,6 +305,27 @@ def reminder_check(request):
             "message": latest.message,
             "entries_today": n,
             "hours_today": str(hours),
+        }
+    )
+
+
+def agent_schedule(request):
+    """Windows eslatma dasturi uchun jadval (login talab qilmaydi, faqat lokal tarmoq)."""
+    username = (request.GET.get("u") or "").strip()
+    now = timezone.localtime()
+    user = get_user_model().objects.filter(username=username, is_active=True).first()
+    reported = bool(user and WorkEntry.objects.filter(user=user, date=now.date()).exists())
+    return JsonResponse(
+        {
+            "now": now.isoformat(timespec="seconds"),
+            "workdays": list(settings.WORK_DAYS),
+            "slots": [
+                {"id": s.id, "time": s.time.strftime("%H:%M"), "message": s.message}
+                for s in ReminderSlot.objects.filter(active=True).order_by("time")
+            ],
+            "user_found": user is not None,
+            "reported_today": reported,
+            "only_if_no_report": settings.REMIND_ONLY_IF_NO_REPORT,
         }
     )
 

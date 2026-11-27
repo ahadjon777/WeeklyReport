@@ -6,3 +6,7 @@ staticfiles/
 parollar.csv
 .env
 .idea/
+agent/build/
+agent/dist/
+agent/*.spec
+agent/weekly_agent.exe
