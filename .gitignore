@@ -11,3 +11,4 @@ agent/dist/
 agent/*.spec
 agent/weekly_agent.exe
 wheels/
+port.txt

@@ -52,6 +52,13 @@ Standart vaqt: 11:00, 16:00, 19:00 (dushanba–juma). Xodim sahifani ochiq tutsa
 - `WORK_DAYS` — ish kunlari
 - `BACKFILL_DAYS` — xodim necha kun orqaga yozuv kirita oladi (standart 3)
 
+## Portni o'zgartirish
+Standart port 8000. Boshqa port kerak bo'lsa, loyiha papkasida `cmd` oching va yozing (masalan 8080 uchun):
+```
+echo 8080>port.txt
+```
+Keyin `run.bat` ni qayta ishga tushiring. Standart portga qaytish uchun `del port.txt`. Brandmauerda yangi portga ruxsat bering va eslatma dasturidagi `server.txt` ga yangi manzilni yozing.
+
 ## Internetsiz tarmoqqa ko'chirish
 Internet bor kompyuterda (loyiha ishlayotgan joyda):
 1. `offline_tayyorlash.bat` ni bosing, kutubxonalar `wheels` papkasiga yuklanadi. Oxirida chiqqan **Python versiyasini** yozib oling (masalan 3.13.1).
