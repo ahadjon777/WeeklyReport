@@ -7,8 +7,12 @@ if not exist venv\Scripts\python.exe (
   exit /b 1
 )
 echo Kutubxonalar tekshirilmoqda...
-venv\Scripts\python -m pip install -q -r requirements.txt
-if errorlevel 1 echo OGOHLANTIRISH: kutubxonalarni yangilab bo'lmadi (internet yo'q bo'lishi mumkin). Davom etamiz...
+if exist wheels (
+  venv\Scripts\python -m pip install -q --no-index --find-links=wheels -r requirements.txt
+) else (
+  venv\Scripts\python -m pip install -q --retries 0 --timeout 3 -r requirements.txt
+)
+if errorlevel 1 echo OGOHLANTIRISH: kutubxonalarni yangilab bo'lmadi ^(internet yo'q bo'lishi mumkin^). Davom etamiz...
 venv\Scripts\python manage.py migrate --noinput
 if errorlevel 1 goto ERR
 venv\Scripts\python manage.py collectstatic --noinput >nul

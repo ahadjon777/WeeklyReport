@@ -52,5 +52,21 @@ Standart vaqt: 11:00, 16:00, 19:00 (dushanba–juma). Xodim sahifani ochiq tutsa
 - `WORK_DAYS` — ish kunlari
 - `BACKFILL_DAYS` — xodim necha kun orqaga yozuv kirita oladi (standart 3)
 
+## Internetsiz tarmoqqa ko'chirish
+Internet bor kompyuterda (loyiha ishlayotgan joyda):
+1. `offline_tayyorlash.bat` ni bosing, kutubxonalar `wheels` papkasiga yuklanadi. Oxirida chiqqan **Python versiyasini** yozib oling (masalan 3.13.1).
+2. python.org dan **aynan shu versiyadagi** Windows installer ni (`Windows installer (64-bit)`) yuklab oling.
+3. Flesh-diskka quyidagilarni nusxalang: butun `WeeklyReport` papkasi (ichida `wheels` bor, lekin **`venv` papkasi va `db.sqlite3` siz**) va Python installer.
+
+Internetsiz tarmoqdagi server kompyuterida:
+1. Python installer ni ishga tushiring, **Add Python to PATH** ni belgilab o'rnating.
+2. `setup.bat` ni bosing (kutubxonalar `wheels` dan o'rnatiladi) va rahbar logini/parolini kiriting.
+3. `xodimlar.csv` ni to'ldirib, `import_employees.bat` ni bosing (yoki panelda «Ommaviy import»).
+4. `run.bat` ni bosing, oynadagi manzilni xodimlarga bering.
+5. Server kompyuteriga doimiy IP bering va brandmauerda 8000 portga ruxsat bering.
+6. Eslatma dasturi: `agent\server.txt` ga yangi server manzilini yozing, `agent` papkasini xodimlar kompyuteriga nusxalab `install_agent.bat` ni bosing (`weekly_agent.exe` ni oldindan yaratgan bo'lishingiz kerak, xodimlar kompyuterida Python kerak emas).
+
+Eski ma'lumotlarni ham olib o'tmoqchi bo'lsangiz, `db.sqlite3` ni ham nusxalang (sinov yozuvlari ham o'tadi, shuning uchun odatda yangidan boshlash yaxshiroq).
+
 ## Zaxira nusxa
 Barcha ma'lumot bitta `db.sqlite3` faylda. Uni vaqti-vaqti bilan nusxalab qo'ying.
